@@ -52,9 +52,12 @@
     <main class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- İşlem Listesi Paneli -->
         <section class="bg-white p-6 rounded-xl shadow">
+            <div class="my-4 flex justify-between items-center">
+                <h2 class="text-xl font-semibold mb-4 text-left">İşlem Listesi</h2>
+                <button id="filter-button" class="text-blue-500 hover:text-blue-700 text-right">Filtrele</button>
+            </div>
             <!-- Kategori Filtreleme Menüsü -->
             <div class="my-4">
-                <label for="category-filter" class="block text-sm font-medium">Kategori Seçin</label>
                 <select id="category-filter" class="w-full border p-2 rounded mt-2">
                     <option value="all">Tüm Kategoriler</option>
                     <option value="food">Yiyecek</option>
@@ -63,13 +66,6 @@
                     <option value="other">Diğer</option>
                 </select>
             </div>
-
-            <div class="my-4 flex justify-between items-center">
-                <h2 class="text-xl font-semibold mb-4 text-left">İşlem Listesi</h2>
-                <button id="filter-button" class="text-blue-500 hover:text-blue-700 text-right">Filtrele</button>
-            </div>
-            
-
             <!-- Filtre Modal -->
             <div id="filter-modal"
                 class="hidden fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center">

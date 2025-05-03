@@ -181,6 +181,18 @@ class FinanceTracker {
         var filteredTransactions = filteredTransactions ? filteredTransactions : this.transactions.filter((tx) =>
             category === "all" ? true : tx.category === category
         );
+        if(filteredTransactions.length == 0) {
+            const li = document.createElement("li");
+            li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
+
+            li.innerHTML = `
+            <div>
+              <span class="font-medium">Bulunamadı</span>
+              <div class="text-xs text-gray-400"></div>
+            </div>`;
+            this.transactionList.appendChild(li);
+            return;
+        }
 
         filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
