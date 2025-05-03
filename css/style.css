@@ -1,0 +1,102 @@
+body {
+    transition: background-color 0.3s, color 0.3s;
+  }
+  
+  body.dark {
+    background-color: #333;
+    color: rgb(7, 6, 6);
+  }
+  #budget-warning {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#budget-warning.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+#budget-warning.hidden {
+    opacity: 0;
+    transform: translateX(100%);
+}
+.budget-category {
+    margin-bottom: 12px;
+}
+
+.budget-category p {
+    margin: 4px 0;
+}
+
+.budget-bar {
+    height: 10px;
+    border-radius: 5px;
+    margin-top: 6px;
+}
+
+.budget-bar-background {
+    background-color: #e5e7eb; /* Gri arka plan */
+}
+
+.budget-bar-foreground {
+    background-color: #22c55e; /* Yeşil: Bütçe ilerlemesi */
+}
+.budget-category {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background-color: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.budget-category p {
+    margin: 4px 0;
+}
+
+.budget-bar {
+    height: 10px;
+    border-radius: 5px;
+    margin-top: 6px;
+}
+
+.budget-bar-background {
+    background-color: #e5e7eb; /* Gri arka plan */
+}
+
+.budget-bar-foreground {
+    background-color: #22c55e; /* Yeşil: Bütçe ilerlemesi */
+}
+
+.budget-category .category-name {
+    font-weight: bold;
+}
+
+.budget-category .category-amount {
+    font-size: 1.2rem;
+    margin-top: 8px;
+}
+
+.budget-category .category-progress {
+    margin-top: 6px;
+}
+.budget-category.low {
+    background-color: #d1fae5; /* Açık Yeşil (Bütçe Yüzdesi < 80%) */
+}
+
+.budget-category.exceeded {
+    background-color: #fee2e2; /* Açık Kırmızı (Bütçe Aşıldığında) */
+}#dark-mode-toggle:checked ~ .dot {
+    transform: translateX(100%);
+    background-color: #4CAF50; /* Yeşil renk, geçiş durumuna göre değişebilir */
+}
+
+#dark-mode-toggle {
+    position: absolute;
+    opacity: 0;
+}
+
+.dot {
+    transition: transform 0.3s ease;
+}
+

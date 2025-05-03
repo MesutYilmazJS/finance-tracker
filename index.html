@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kişisel Finans Takibi</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts (isteğe bağlı) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Özel CSS -->
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body class="bg-gray-100 min-h-screen text-gray-800">
+    <!-- Navbar -->
+    <header class="bg-white shadow p-4 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <!-- Karanlık Mod Switch -->
+            <label for="dark-mode-toggle" class="flex items-center cursor-pointer">
+                <div class="relative">
+                    <!-- Karanlık Mod Switch -->
+                    <input type="checkbox" id="dark-mode-toggle" class="sr-only" />
+                    <div class="block bg-gray-300 w-14 h-8 rounded-full"></div>
+                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                </div>
+            </label>
+            <h1 class="text-2xl font-bold">Finans Takip Paneli</h1>
+        </div>
+        <button id="openModalBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            + Yeni İşlem Ekle
+        </button>
+    </header>
+    
+    
+
+
+    <!-- Bütçe Bilgisi ve Gösterge -->
+    <section class="p-6 grid grid-cols-1 gap-6">
+        <div id="budget-summary" class="grid grid-cols-2 md:grid-cols-1 lg:grid-cols-6 gap-6">
+            <!-- Burada bütçe bilgileri dinamik olarak görünecek -->
+        </div>
+    </section>
+
+
+    <!-- Dashboard Layout -->
+    <main class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- İşlem Listesi Paneli -->
+        <section class="bg-white p-6 rounded-xl shadow">
+            <!-- Kategori Filtreleme Menüsü -->
+            <div class="my-4">
+                <label for="category-filter" class="block text-sm font-medium">Kategori Seçin</label>
+                <select id="category-filter" class="w-full border p-2 rounded mt-2">
+                    <option value="all">Tüm Kategoriler</option>
+                    <option value="food">Yiyecek</option>
+                    <option value="transport">Ulaşım</option>
+                    <option value="entertainment">Eğlence</option>
+                    <option value="other">Diğer</option>
+                </select>
+            </div>
+
+            <div class="my-4 flex justify-between items-center">
+                <h2 class="text-xl font-semibold mb-4 text-left">İşlem Listesi</h2>
+                <button id="filter-button" class="text-blue-500 hover:text-blue-700 text-right">Filtrele</button>
+            </div>
+            
+
+            <!-- Filtre Modal -->
+            <div id="filter-modal"
+                class="hidden fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center">
+                <div class="bg-white p-6 rounded-xl w-100">
+                    <h3 class="text-xl font-semibold mb-4">Filtreleme Seçenekleri</h3>
+                    <form id="filter-form">
+                        <!-- Fiyat Aralığı -->
+                        <div class="mb-4">
+                            <label for="min-price" class="block text-sm font-medium">Fiyat Aralığı</label>
+                            <div class="flex space-x-2">
+                                <input type="number" id="min-price" placeholder="Min"
+                                    class="w-full p-2 border rounded mt-2" />
+                                <input type="number" id="max-price" placeholder="Max"
+                                    class="w-full p-2 border rounded mt-2" />
+                            </div>
+                        </div>
+
+                        <!-- Gelir / Gider -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium">İşlem Türü</label>
+                            <div class="flex items-center space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="transaction-type" value="income" class="mr-2" />
+                                    Gelir
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="transaction-type" value="expense" class="mr-2" />
+                                    Gider
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Tarih Aralığı -->
+                        <div class="mb-4">
+                            <label for="start-date" class="block text-sm font-medium">Tarih Aralığı</label>
+                            <div class="flex space-x-2">
+                                <input type="date" id="start-date" class="w-full p-2 border rounded mt-2" />
+                                <input type="date" id="end-date" class="w-full p-2 border rounded mt-2" />
+                            </div>
+                        </div>
+
+                        <!-- Kategori -->
+                        <div class="mb-4">
+                            <label for="filter-category" class="block text-sm font-medium">Kategori Seçin</label>
+                            <select id="filter-category" class="w-full border p-2 rounded mt-2">
+                                <option value="all">Tüm Kategoriler</option>
+                                <option value="food">Yiyecek</option>
+                                <option value="transport">Ulaşım</option>
+                                <option value="entertainment">Eğlence</option>
+                                <option value="other">Diğer</option>
+                            </select>
+                        </div>
+
+                        <div class="flex justify-between">
+                            <button type="button" id="cancel-filter"
+                                class="bg-gray-300 text-white p-2 rounded">İptal</button>
+                            <button type="submit" class="bg-blue-500 text-white p-2 rounded">Uygula</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <ul id="transaction-list" class="space-y-2 max-h-96 overflow-y-auto"></ul>
+        </section>
+
+
+        <!-- Bütçe Yönetimi -->
+        <section class="bg-white p-6 rounded-xl shadow mb-4">
+            <h3 class="text-lg font-semibold">Bütçe Yönetimi</h3>
+            <div class="mt-4">
+                <label for="budget-input" class="block">Kategoriye Göre Bütçe Belirle</label>
+                <input id="budget-input" type="number" class="mt-2 p-2 w-full border rounded" placeholder="Bütçe Girin">
+
+                <label for="category-input" class="block mt-4">Kategori Seçin</label>
+                <select id="category-input" class="mt-2 p-2 w-full border rounded">
+                    <option value="food">Yiyecek</option>
+                    <option value="transport">Ulaşım</option>
+                    <option value="entertainment">Eğlence</option>
+                    <option value="other">Diğer</option>
+                </select>
+
+                <button id="save-budget-btn" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
+                    Bütçeyi Kaydet
+                </button>
+            </div>
+            <!-- Uyarı Alanı -->
+            <div id="budget-warning"
+                class="hidden fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg">
+                <p>Bütçenizi aştınız!</p>
+            </div>
+
+        </section>
+
+        <!-- Grafik Paneli -->
+        <section class="bg-white p-6 rounded-xl shadow mb-4">
+            <div class="flex justify-between my-4">
+                <div>
+                    <h4 class="font-medium">Gelir</h4>
+                    <p id="total-income">₺0.00</p>
+                </div>
+                <div>
+                    <h4 class="font-medium">Gider</h4>
+                    <p id="total-expense">₺0.00</p>
+                </div>
+                <div>
+                    <h4 class="font-medium">Net Gelir</h4>
+                    <p id="net-income">₺0.00</p>
+                </div>
+            </div>
+            <canvas id="pieChart" height="300"></canvas>
+        </section>
+
+        <!-- Bütçe Grafiği -->
+        <section class="bg-white p-6 rounded-xl shadow mb-4">
+            <h3 class="text-lg font-semibold">Bütçe Grafiği</h3>
+            <canvas id="budgetChart" height="200"></canvas>
+        </section>
+
+    </main>
+
+    <!-- Modal: Yeni İşlem Formu -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold mb-4">Yeni İşlem Ekle</h3>
+            <form id="transaction-form" class="space-y-4">
+                <input type="text" id="text" placeholder="Açıklama" class="w-full border p-2 rounded" required />
+                <input type="number" id="amount" placeholder="Tutar" class="w-full border p-2 rounded" required />
+                <input type="date" id="transaction-date" class="w-full border p-2 rounded" required />
+                <select id="category" class="w-full border p-2 rounded">
+                    <option value="food">Yiyecek</option>
+                    <option value="transport">Ulaşım</option>
+                    <option value="entertainment">Eğlence</option>
+                    <option value="other">Diğer</option>
+                </select>
+                <div class="flex space-x-4">
+                    <label class="flex items-center space-x-2">
+                        <input type="radio" name="type" value="income" checked class="accent-green-500" />
+                        <span>Gelir</span>
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <input type="radio" name="type" value="expense" class="accent-red-500" />
+                        <span>Gider</span>
+                    </label>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" id="cancelModalBtn" class="text-gray-500 hover:underline">İptal</button>
+                    <button type="submit"
+                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+
+</html>
