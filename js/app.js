@@ -10,7 +10,6 @@ class FinanceTracker {
         this.amountInput = document.getElementById("amount");
         this.typeInputs = document.querySelectorAll('input[name="type"]');
         this.transactionList = document.getElementById("transaction-list");
-        this.balanceDisplay = document.getElementById("balance");
         this.categoryFilter = document.getElementById("category-filter"); // Kategori filtreleme elemanı
         this.filterButton = document.getElementById("filter-button"); // Filtreleme butonu
         this.filterModal = document.getElementById("filter-modal"); // Filtre modalı
@@ -45,7 +44,6 @@ class FinanceTracker {
         // Bütçe Grafiği
         this.budgetChartCanvas = document.getElementById("budgetChart");
         this.budgetChart = null;
-        this.renderTransactions(); // İşlemleri render et
         // Bütçe Bilgisi
         this.budgetSummary = document.getElementById("budget-summary");
 
@@ -61,19 +59,26 @@ class FinanceTracker {
         this.cancelModalBtn?.addEventListener("click", () => this.modal.classList.add("hidden"));
         this.categoryFilter?.addEventListener("change", (e) => this.filterByCategory(e.target.value)); // Filtreleme olayını ekle
         // Filtreleme işlemi başlatma
-        this.filterButton.addEventListener("click", () => this.openFilterModal());
-        this.cancelFilterButton.addEventListener("click", () => this.closeFilterModal());
-        this.filterForm.addEventListener("submit", (e) => this.applyFilters(e));
-        // Zaman dilimi seçimi
-        this.monthlyButton = document.getElementById("monthly-report");
-        this.weeklyButton = document.getElementById("weekly-report");
+        this.filterButton?.addEventListener("click", () => this.openFilterModal());
+        this.cancelFilterButton?.addEventListener("click", () => this.closeFilterModal());
+        this.filterForm?.addEventListener("submit", (e) => this.applyFilters(e));
+        this.modal?.addEventListener("click", (e) => {
+            if (e.target === this.modal) this.modal.classList.add("hidden");
+        });
+        this.filterModal?.addEventListener("click", (e) => {
+            if (e.target === this.filterModal) this.closeFilterModal();
+        });
 
         // Eğer yerel depolamada karanlık mod aktifse, bunu uygula
-        if (localStorage.getItem("darkMode") === "true") {
+        const isDarkMode = localStorage.getItem("darkMode") === "true";
+        if (isDarkMode) {
             document.body.classList.add("dark");
         }
+        if (this.darkModeToggle) {
+            this.darkModeToggle.checked = isDarkMode;
+        }
 
-        this.darkModeToggle?.addEventListener("click", this.toggleDarkMode);
+        this.darkModeToggle?.addEventListener("change", this.toggleDarkMode);
         this.renderTransactions(); // İlk render
         this.updateChart(); // Grafik güncelle
         this.updateBudgetChart(); // Bütçe grafiğini güncelle
@@ -120,7 +125,7 @@ class FinanceTracker {
         }
 
         // Filtrelenmiş işlemleri render et
-        this.renderTransactions(null ,filteredTransactions);
+        this.renderTransactions("all", filteredTransactions);
     }
     // Karanlık mod değiştirme fonksiyonu
     toggleDarkMode = () => {
@@ -129,6 +134,8 @@ class FinanceTracker {
         // Durumu yerel depolamaya kaydet
         const isDarkMode = document.body.classList.contains("dark");
         localStorage.setItem("darkMode", isDarkMode.toString());
+        this.updateChart();
+        this.updateBudgetChart();
     };
     addTransaction(e) {
         e.preventDefault();
@@ -175,46 +182,53 @@ class FinanceTracker {
     }
 
 
-    renderTransactions(category = "all",filteredTransactions) {
+    renderTransactions(category = "all", filteredTransactions) {
         this.transactionList.innerHTML = "";
 
-        var filteredTransactions = filteredTransactions ? filteredTransactions : this.transactions.filter((tx) =>
+        const transactionItems = filteredTransactions ? filteredTransactions : this.transactions.filter((tx) =>
             category === "all" ? true : tx.category === category
         );
-        if(filteredTransactions.length == 0) {
+        if (transactionItems.length === 0) {
             const li = document.createElement("li");
-            li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
+            li.className = "empty-state";
 
             li.innerHTML = `
             <div>
-              <span class="font-medium">Bulunamadı</span>
-              <div class="text-xs text-gray-400"></div>
+              <strong>Henüz işlem görünmüyor</strong>
+              <div>Filtreleri temizleyebilir veya yeni bir kayıt ekleyebilirsin.</div>
             </div>`;
             this.transactionList.appendChild(li);
+            this.updateTotals();
             return;
         }
 
-        filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        transactionItems.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        filteredTransactions.forEach((tx) => {
+        transactionItems.forEach((tx) => {
             const li = document.createElement("li");
-            li.className = "flex justify-between items-center p-2 bg-gray-100 rounded";
+            li.className = "transaction-item";
 
             li.innerHTML = `
-            <div>
-              <span class="font-medium">${tx.text}</span>
-              <span class="${tx.type === "income" ? "text-green-500" : "text-red-500"} ml-2">
-                ${tx.type === "income" ? "+" : "-"}₺${tx.amount.toFixed(2)}
-              </span>
-              <div class="text-sm text-gray-500">${new Date(tx.date).toLocaleDateString()}</div>
-              <div class="text-xs text-gray-400">${this.formatCategory(tx.category)}</div>
+            <div class="transaction-main">
+              <div class="transaction-title-row">
+                <span class="transaction-title">${tx.text}</span>
+                <span class="transaction-badge ${tx.type}">
+                  ${tx.type === "income" ? "+" : "-"}₺${tx.amount.toFixed(2)}
+                </span>
+              </div>
+              <div class="transaction-date">${new Date(tx.date).toLocaleDateString("tr-TR")}</div>
+              <div class="transaction-category">${this.formatCategory(tx.category)}</div>
             </div>
-            <button class="text-sm text-red-500 hover:underline">Sil</button>
+            <button class="text-button">Sil</button>
           `;
             li.querySelector("button").addEventListener("click", () => this.deleteTransaction(tx.id));
             this.transactionList.appendChild(li);
         });
 
+        this.updateTotals();
+    }
+
+    updateTotals() {
         let income = 0;
         let expense = 0;
 
@@ -229,6 +243,20 @@ class FinanceTracker {
         this.totalIncome.innerHTML = `₺${income.toFixed(2)}`;
         this.totalExpense.innerHTML = `₺${expense.toFixed(2)}`;
         this.netIncome.innerHTML = `₺${(income - expense).toFixed(2)}`;
+    }
+
+    getThemeColors() {
+        const styles = getComputedStyle(document.body);
+
+        return {
+            text: styles.getPropertyValue("--text").trim(),
+            muted: styles.getPropertyValue("--muted").trim(),
+            border: styles.getPropertyValue("--border").trim(),
+            income: styles.getPropertyValue("--income").trim(),
+            expense: styles.getPropertyValue("--expense").trim(),
+            brand: styles.getPropertyValue("--brand").trim(),
+            accent: styles.getPropertyValue("--accent").trim(),
+        };
     }
     // Kategoriyi daha anlaşılır bir şekilde formatla
     formatCategory(category) {
@@ -255,10 +283,22 @@ class FinanceTracker {
         this.checkBudgetAlert(category); // Kaydettikten sonra uyarıyı kontrol et
         this.updateBudgetChart(); // Grafik güncelle
         this.updateBudgetSummary(); // Bütçe özetini güncelle
-
+        this.budgetInput.value = "";
     }
     updateBudgetSummary() {
         this.budgetSummary.innerHTML = ''; // Önce mevcut içeriği temizle
+
+        if (Object.keys(this.budgets).length === 0) {
+            const emptyCard = document.createElement("div");
+            emptyCard.className = "budget-category";
+            emptyCard.innerHTML = `
+                <p class="category-name">Hazır Başlangıç</p>
+                <p class="category-amount">Henüz bütçe eklenmedi</p>
+                <p class="category-progress">İlk kategori bütçeni tanımlayarak bu alanı doldurabilirsin.</p>
+            `;
+            this.budgetSummary.appendChild(emptyCard);
+            return;
+        }
 
         // Her kategori için bütçeyi ve harcamayı göster
         for (const category in this.budgets) {
@@ -268,6 +308,7 @@ class FinanceTracker {
                 .reduce((acc, tx) => acc + tx.amount, 0);
 
             const budgetPercentage = (totalCategoryExpense / budget) * 100;
+            const displayPercentage = Math.max(budgetPercentage, 0);
 
             // Renkli arka plan için class belirle
             let budgetClass = '';
@@ -289,7 +330,7 @@ class FinanceTracker {
                         <div class="budget-bar-foreground" style="width: ${Math.min(budgetPercentage, 100)}%;"></div>
                     </div>
                 </div>
-                <p class="category-progress">${Math.min(budgetPercentage, 100).toFixed(2)}% harcandı</p>
+                <p class="category-progress">${displayPercentage.toFixed(2)}% harcandı</p>
             `;
 
             this.budgetSummary.appendChild(budgetCategoryElement);
@@ -299,6 +340,7 @@ class FinanceTracker {
 
     // Bütçe grafiğini güncelleme
     updateBudgetChart() {
+        const colors = this.getThemeColors();
         const categories = Object.keys(this.budgets);
         const budgetData = categories.map((category) => this.budgets[category] || 0);
         const expenseData = categories.map((category) => {
@@ -327,12 +369,14 @@ class FinanceTracker {
                     {
                         label: "Bütçe",
                         data: chartBudgets,
-                        backgroundColor: "#22c55e", // Tailwind yeşil
+                        backgroundColor: colors.brand,
+                        borderRadius: 10,
                     },
                     {
                         label: "Harcamalar",
                         data: chartExpenses,
-                        backgroundColor: "#ef4444", // Tailwind kırmızı
+                        backgroundColor: colors.expense,
+                        borderRadius: 10,
                     },
                 ],
             },
@@ -341,11 +385,28 @@ class FinanceTracker {
                 scales: {
                     y: {
                         beginAtZero: true,
+                        ticks: {
+                            color: colors.muted,
+                        },
+                        grid: {
+                            color: colors.border,
+                        },
+                    },
+                    x: {
+                        ticks: {
+                            color: colors.muted,
+                        },
+                        grid: {
+                            display: false,
+                        },
                     },
                 },
                 plugins: {
                     legend: {
                         position: "top",
+                        labels: {
+                            color: colors.text,
+                        },
                     },
                 },
             },
@@ -358,6 +419,8 @@ class FinanceTracker {
             .reduce((acc, tx) => acc + tx.amount, 0);
 
         const budget = this.budgets[category] || 0;
+
+        if (budget <= 0) return;
 
         if (totalCategoryExpense > budget) {
             this.showToast(); // Uyarıyı göster
@@ -391,7 +454,7 @@ class FinanceTracker {
     }
 
     updateChart() {
-        this.updateBudgetChart(); // Grafik güncelle
+        const colors = this.getThemeColors();
         const income = this.transactions
             .filter((tx) => tx.type === "income")
             .reduce((acc, tx) => acc + tx.amount, 0);
@@ -409,8 +472,9 @@ class FinanceTracker {
                 datasets: [
                     {
                         data: [income, expense],
-                        backgroundColor: ["#22c55e", "#ef4444"], // Tailwind yeşil & kırmızı
-                        borderWidth: 1,
+                        backgroundColor: [colors.income, colors.expense],
+                        borderColor: colors.border,
+                        borderWidth: 2,
                     },
                 ],
             },
@@ -419,6 +483,9 @@ class FinanceTracker {
                 plugins: {
                     legend: {
                         position: "bottom",
+                        labels: {
+                            color: colors.text,
+                        },
                     },
                 },
             },
