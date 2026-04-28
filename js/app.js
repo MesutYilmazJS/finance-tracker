@@ -1,8 +1,34 @@
 class FinanceTracker {
     constructor() {
         // Verileri al
-        this.transactions = JSON.parse(localStorage.getItem("transactions")) || [];
-        this.budgets = JSON.parse(localStorage.getItem("budgets")) || {}; // Bütçeleri yerel depolamadan al
+        // Verileri al veya dummy data yükle
+        const savedTransactions = JSON.parse(localStorage.getItem("transactions"));
+        const savedBudgets = JSON.parse(localStorage.getItem("budgets"));
+
+        if (!savedTransactions || savedTransactions.length === 0) {
+            this.transactions = [
+                { id: 1, text: "Maaş", amount: 15000, type: "income", date: new Date().toISOString().split('T')[0], category: "other" },
+                { id: 2, text: "Market Alışverişi", amount: 850, type: "expense", date: new Date().toISOString().split('T')[0], category: "food" },
+                { id: 3, text: "Kira", amount: 5000, type: "expense", date: new Date().toISOString().split('T')[0], category: "other" },
+                { id: 4, text: "İnternet Faturası", amount: 200, type: "expense", date: new Date().toISOString().split('T')[0], category: "entertainment" },
+                { id: 5, text: "Benzin", amount: 1200, type: "expense", date: new Date().toISOString().split('T')[0], category: "transport" }
+            ];
+            this.saveTransactions();
+        } else {
+            this.transactions = savedTransactions;
+        }
+
+        if (!savedBudgets || Object.keys(savedBudgets).length === 0) {
+            this.budgets = {
+                food: 3000,
+                transport: 1500,
+                entertainment: 1000,
+                other: 8000
+            };
+            localStorage.setItem("budgets", JSON.stringify(this.budgets));
+        } else {
+            this.budgets = savedBudgets;
+        }
 
         // DOM elemanları
         this.form = document.getElementById("transaction-form");
@@ -49,103 +75,6 @@ class FinanceTracker {
 
         // Olayları başlat
         this.init();
-
-     // dummy data ekleme (ilk kullanımda görebilmek için)
-      // ...existing code...
-const DATA_PATH = './data/dummy-data.json';
-const STORAGE_KEY = 'ft.appData.v1';
-let appData = null;
-let pieChart = null;
-let budgetChart = null;
-const currencyFmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v);
-
-async function saveData() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-  } catch (e) {
-    console.error('Veri kaydedilemedi:', e);
-  }
-}
-
-async function loadData() {
-  // Eğer localStorage'da veri varsa onu kullan
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    try {
-      appData = JSON.parse(stored);
-      renderAll();
-      bindUI();
-      return;
-    } catch (e) {
-      console.warn('LocalStorage verisi parse edilemedi, tekrar yükleniyor.', e);
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }
-
-  // Yoksa dummy JSON'dan çek ve localStorage'a kaydet
-  try {
-    const res = await fetch(DATA_PATH);
-    if (!res.ok) throw new Error('Dosya yüklenemedi');
-    appData = await res.json();
-    await saveData();
-    renderAll();
-    bindUI();
-  } catch (err) {
-    console.error('Veri yüklenemedi:', err);
-    // fallback: boş yapı
-    appData = { accounts: [], categories: [], transactions: [] };
-    renderAll();
-    bindUI();
-  }
-}
-// ...existing code...
-
-function bindUI() {
-  // modal open/close & yeni işlem ekleme
-  const modal = document.getElementById('modal');
-  document.getElementById('openModalBtn').addEventListener('click', () => modal.classList.remove('hidden'));
-  document.getElementById('cancelModalBtn').addEventListener('click', () => modal.classList.add('hidden'));
-  document.getElementById('transaction-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const desc = document.getElementById('text').value;
-    const amount = parseFloat(document.getElementById('amount').value);
-    const date = document.getElementById('transaction-date').value;
-    const category = document.getElementById('category').value;
-    const type = document.querySelector('input[name="type"]:checked').value;
-    const tx = {
-      id: 'tx-' + Date.now(),
-      date,
-      amount: type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
-      currency: 'TRY',
-      accountId: (appData.accounts && appData.accounts[0]) ? appData.accounts[0].id : null,
-      categoryKey: category,
-      description: desc,
-      type
-    };
-    appData.transactions.push(tx);
-    saveData(); // değişiklikleri localStorage'a kaydet
-    renderAll();
-    document.getElementById('transaction-form').reset();
-    modal.classList.add('hidden');
-  });
-
-  // basit filtre: kategori seçince listeni güncelle
-  const filter = document.getElementById('category-filter');
-  filter.addEventListener('change', () => {
-    const val = filter.value;
-    const list = document.getElementById('transaction-list');
-    Array.from(list.children).forEach(li => {
-      if (val === 'all') li.style.display = '';
-      else {
-        const meta = li.querySelector('.tx-meta').textContent.toLowerCase();
-        li.style.display = meta.includes(val) ? '' : 'none';
-      }
-    });
-  });
-}
-// ...existing code...
-
-loadData().catch(err => console.error('Veri yüklenemedi:', err));
     }
 
 
@@ -599,5 +528,4 @@ loadData().catch(err => console.error('Veri yüklenemedi:', err));
 // Uygulamayı başlat
 document.addEventListener("DOMContentLoaded", () => {
     new FinanceTracker();
-    
 });
