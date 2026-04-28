@@ -49,6 +49,103 @@ class FinanceTracker {
 
         // Olayları başlat
         this.init();
+
+     // dummy data ekleme (ilk kullanımda görebilmek için)
+      // ...existing code...
+const DATA_PATH = './data/dummy-data.json';
+const STORAGE_KEY = 'ft.appData.v1';
+let appData = null;
+let pieChart = null;
+let budgetChart = null;
+const currencyFmt = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(v);
+
+async function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  } catch (e) {
+    console.error('Veri kaydedilemedi:', e);
+  }
+}
+
+async function loadData() {
+  // Eğer localStorage'da veri varsa onu kullan
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    try {
+      appData = JSON.parse(stored);
+      renderAll();
+      bindUI();
+      return;
+    } catch (e) {
+      console.warn('LocalStorage verisi parse edilemedi, tekrar yükleniyor.', e);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
+
+  // Yoksa dummy JSON'dan çek ve localStorage'a kaydet
+  try {
+    const res = await fetch(DATA_PATH);
+    if (!res.ok) throw new Error('Dosya yüklenemedi');
+    appData = await res.json();
+    await saveData();
+    renderAll();
+    bindUI();
+  } catch (err) {
+    console.error('Veri yüklenemedi:', err);
+    // fallback: boş yapı
+    appData = { accounts: [], categories: [], transactions: [] };
+    renderAll();
+    bindUI();
+  }
+}
+// ...existing code...
+
+function bindUI() {
+  // modal open/close & yeni işlem ekleme
+  const modal = document.getElementById('modal');
+  document.getElementById('openModalBtn').addEventListener('click', () => modal.classList.remove('hidden'));
+  document.getElementById('cancelModalBtn').addEventListener('click', () => modal.classList.add('hidden'));
+  document.getElementById('transaction-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const desc = document.getElementById('text').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    const date = document.getElementById('transaction-date').value;
+    const category = document.getElementById('category').value;
+    const type = document.querySelector('input[name="type"]:checked').value;
+    const tx = {
+      id: 'tx-' + Date.now(),
+      date,
+      amount: type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
+      currency: 'TRY',
+      accountId: (appData.accounts && appData.accounts[0]) ? appData.accounts[0].id : null,
+      categoryKey: category,
+      description: desc,
+      type
+    };
+    appData.transactions.push(tx);
+    saveData(); // değişiklikleri localStorage'a kaydet
+    renderAll();
+    document.getElementById('transaction-form').reset();
+    modal.classList.add('hidden');
+  });
+
+  // basit filtre: kategori seçince listeni güncelle
+  const filter = document.getElementById('category-filter');
+  filter.addEventListener('change', () => {
+    const val = filter.value;
+    const list = document.getElementById('transaction-list');
+    Array.from(list.children).forEach(li => {
+      if (val === 'all') li.style.display = '';
+      else {
+        const meta = li.querySelector('.tx-meta').textContent.toLowerCase();
+        li.style.display = meta.includes(val) ? '' : 'none';
+      }
+    });
+  });
+}
+// ...existing code...
+
+loadData().catch(err => console.error('Veri yüklenemedi:', err));
     }
 
 
@@ -502,4 +599,5 @@ class FinanceTracker {
 // Uygulamayı başlat
 document.addEventListener("DOMContentLoaded", () => {
     new FinanceTracker();
+    
 });
